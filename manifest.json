@@ -1,7 +1,7 @@
 {
 	"id": "image-curator",
 	"name": "Image Curator",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "1.7.2",
 	"description": "For effortlessly organizing and exploring image assets. Right-click an image to create an embedded note, categorize it through a simple GUI, and browse your curated images in visual galleries without writing code or queries.",
 	"author": "Giacer",
