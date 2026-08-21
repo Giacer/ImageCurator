@@ -34,7 +34,7 @@ export class ImageCuratorSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName("Image Curator Settings")
+			.setName("Folder Paths")
 			.setHeading();
 
 

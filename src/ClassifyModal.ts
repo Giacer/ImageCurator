@@ -194,8 +194,7 @@ export class ClassifyModal extends Modal {
 			return;
 		}
 
-		this.tagSuggestionEl.style.display =
-			"block";
+		this.tagSuggestionEl.removeClass("image-curator-hidden");
 
 		for (const tag of suggestions) {
 			const suggestion =
@@ -251,8 +250,7 @@ export class ClassifyModal extends Modal {
 			return;
 		}
 
-		this.tagSuggestionEl.style.display =
-			"none";
+		this.tagSuggestionEl.addClass("image-curator-hidden");
 	}
 
 
