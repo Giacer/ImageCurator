@@ -1,0 +1,11 @@
+{
+	"id": "image-Curator",
+	"name": "Image Curator",
+	"version": "1.0.0",
+	"minAppVersion": "1.0.0",
+	"description": "An Obsidian plugin for effortlessly organizing and exploring image assets. Right-click an image to create an embedded note, categorize it through a simple GUI, and browse your curated images in visual galleries without writing code or queries.",
+	"author": "wahgyu",
+	"authorUrl": "https://obsidian.md",
+	"fundingUrl": "https://obsidian.md/pricing",
+	"isDesktopOnly": false
+}
