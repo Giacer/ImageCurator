@@ -6,7 +6,7 @@ import {
 import {
 	DEFAULT_SETTINGS,
 	ImageCuratorSettings,
-	SampleSettingTab,
+	ImageCuratorSettingTab,
 } from "./settings";
 
 import {
@@ -129,7 +129,7 @@ export default class ImageCurator extends Plugin {
 		// ====================================================
 
 		this.addSettingTab(
-			new SampleSettingTab(
+			new ImageCuratorSettingTab(
 				this.app,
 				this
 			)

@@ -19,7 +19,7 @@ export const DEFAULT_SETTINGS: ImageCuratorSettings = {
 };
 
 
-export class SampleSettingTab extends PluginSettingTab {
+export class ImageCuratorSettingTab extends PluginSettingTab {
 	plugin: ImageCurator;
 
 	constructor(app: App, plugin: ImageCurator) {
@@ -33,9 +33,9 @@ export class SampleSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl("h2", {
-			text: "Image Curator Settings",
-		});
+		new Setting(containerEl)
+			.setName("Image Curator Settings")
+			.setHeading();
 
 
 		// ====================================================
