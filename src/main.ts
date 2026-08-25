@@ -27,6 +27,9 @@ import {
 	GALLERY_VIEW_TYPE,
 } from "./ImageGalleryView";
 
+import {
+	TagManager,
+} from "./TagManager";
 
 export default class ImageCurator extends Plugin {
 
@@ -63,14 +66,15 @@ export default class ImageCurator extends Plugin {
 				)
 		);
 
-		// ====================================================
+		// ========================================================
 		// File Menu
-		// ====================================================
+		// ========================================================
 
 		this.registerEvent(
 			this.app.workspace.on(
 				"file-menu",
 				(menu, file) => {
+
 					if (!(file instanceof TFile)) {
 						return;
 					}
@@ -81,6 +85,7 @@ export default class ImageCurator extends Plugin {
 
 					menu.addItem(
 						(item) => {
+
 							item
 								.setTitle(
 									"Classify Image"
@@ -88,35 +93,38 @@ export default class ImageCurator extends Plugin {
 								.setIcon(
 									"image-upscale"
 								)
-								.onClick(
-									() => {
-										console.log(
-											"[ImageCurator] settings.assetFolder =",
-											this.settings.assetFolder
-										);
+								.onClick(() => {
 
-										new ClassifyModal(
-											this.app,
-											file,
-											this.settings.assetFolder,
-											this.settings.noteFolder
-										).open();
-									}
-								);
+									this.openClassifyModalForFile(
+										file
+									);
+								});
 						}
 					);
 				}
 			)
 		);
 
-		// ====================================================
+
+		// ========================================================
 		// Command
-		// ====================================================
+		// ========================================================
+
+		this.addCommand({
+			id: "classify-image",
+			name: "Classify Image",
+			callback: () => {
+
+				this.openClassifyModal();
+			},
+		});
+
 
 		this.addCommand({
 			id: "open-image-gallery",
 			name: "Open Image Gallery",
 			callback: () => {
+
 				new GallerySettingsModal(
 					this.app,
 					this
@@ -251,15 +259,21 @@ export default class ImageCurator extends Plugin {
 		let result = [...assets];
 
 		if (settings.tags.length > 0) {
+
+			const tagManager =
+				new TagManager(this.app);
+
 			result =
 				result.filter(
 					(asset) =>
 						settings.tags.every(
 							(tag) =>
-								asset.tags.includes(
+								tagManager.hasHierarchicalTag(
+									asset.tags,
 									tag
 								)
-						)
+							)
+						
 				);
 		}
 
@@ -415,6 +429,46 @@ export default class ImageCurator extends Plugin {
 		await this.saveData(
 			this.settings
 		);
+	}
+
+	// ========================================================
+	// Classify
+	// ========================================================
+
+	private openClassifyModal(): void {
+
+		const file =
+			this.app.workspace
+				.getActiveFile();
+
+		if (!file) {
+			return;
+		}
+
+		if (!this.isImage(file)) {
+			return;
+		}
+
+		this.openClassifyModalForFile(
+			file
+		);
+	}
+
+
+	private openClassifyModalForFile(
+		file: TFile
+	): void {
+
+		if (!this.isImage(file)) {
+			return;
+		}
+
+		new ClassifyModal(
+			this.app,
+			file,
+			this.settings.assetFolder,
+			this.settings.noteFolder
+		).open();
 	}
 
 	// ========================================================

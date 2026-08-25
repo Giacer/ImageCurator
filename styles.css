@@ -149,3 +149,8 @@
 .image-curator-tag-checkbox input {
 	margin: 0;
 }
+
+.image-curator-hidden {
+	display: none;
+}
+

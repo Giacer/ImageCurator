@@ -10,12 +10,18 @@ import {
 	ImageProperties,
 } from "./types";
 
+import {
+	TagManager,
+} from "./TagManager";
+
 
 export class ClassifyModal extends Modal {
 
 	private file: TFile;
 	private assetFolder: string;
 	private noteFolder: string;
+
+	private tagManager: TagManager;
 
 	private properties: ImageProperties = {
 		tags: [],
@@ -26,8 +32,6 @@ export class ClassifyModal extends Modal {
 	private tagInputEl!: HTMLInputElement;
 	private tagSuggestionEl!: HTMLDivElement;
 	private tagCheckboxEl!: HTMLDivElement;
-
-	private existingTags: string[] = [];
 
 
 	constructor(
@@ -41,6 +45,10 @@ export class ClassifyModal extends Modal {
 		this.file = file;
 		this.assetFolder = assetFolder;
 		this.noteFolder = noteFolder;
+
+		this.tagManager =
+			new TagManager(app);
+		console.log("TagManager:", TagManager);
 	}
 
 
@@ -52,8 +60,6 @@ export class ClassifyModal extends Modal {
 		contentEl.createEl("h2", {
 			text: "Create Asset Note",
 		});
-
-		this.existingTags = this.getExistingTags();
 
 		this.createDateSetting(contentEl);
 		this.createTagSetting(contentEl);
@@ -87,42 +93,62 @@ export class ClassifyModal extends Modal {
 	// Tags
 	// ========================================================
 
-    private createTagSetting(containerEl: HTMLElement) {
-        const setting = new Setting(containerEl)
-            .setName("Tags")
-            .setDesc("Enter tags separated by commas or select existing tags.");
+	private createTagSetting(
+		containerEl: HTMLElement
+	) {
+		const setting =
+			new Setting(containerEl)
+				.setName("Tags")
+				.setDesc(
+					"Enter tags separated by commas or select existing tags."
+				);
 
-        setting.addText((text) => {
-            this.tagInputEl = text.inputEl;
+		setting.addText((text) => {
+			this.tagInputEl =
+				text.inputEl;
 
-            text
-                .setPlaceholder("mushroom, red, fantasy")
-                .onChange((value) => {
-                    this.updateTagsFromInput(value);
-                    this.updateTagSuggestions();
-                    this.updateTagCheckboxes();
-                });
+			text
+				.setPlaceholder(
+					"mushroom, red, fantasy"
+				)
+				.onChange((value) => {
+					this.updateTagsFromInput(
+						value
+					);
 
-            this.tagInputEl.addEventListener("focus", () => {
-                this.updateTagSuggestions();
-            });
+					this.updateTagSuggestions();
 
-            this.tagInputEl.addEventListener("input", () => {
-                this.updateTagSuggestions();
-            });
-        });
+					this.updateTagCheckboxes();
+				});
 
-        this.tagSuggestionEl = containerEl.createDiv(
-            "image-curator-tag-suggestions"
-        );
+			this.tagInputEl.addEventListener(
+				"focus",
+				() => {
+					this.updateTagSuggestions();
+				}
+			);
 
-        this.tagCheckboxEl = containerEl.createDiv(
-            "image-curator-tag-checkboxes"
-        );
+			this.tagInputEl.addEventListener(
+				"input",
+				() => {
+					this.updateTagSuggestions();
+				}
+			);
+		});
 
-        this.updateTagSuggestions();
-        this.updateTagCheckboxes();
-    }
+		this.tagSuggestionEl =
+			containerEl.createDiv(
+				"image-curator-tag-suggestions"
+			);
+
+		this.tagCheckboxEl =
+			containerEl.createDiv(
+				"image-curator-tag-checkboxes"
+			);
+
+		this.updateTagSuggestions();
+		this.updateTagCheckboxes();
+	}
 
 
 	// ========================================================
@@ -132,16 +158,9 @@ export class ClassifyModal extends Modal {
 	private updateTagsFromInput(
 		value: string
 	) {
-		this.properties.tags = value
-			.split(",")
-			.map((tag) =>
-				tag
-					.trim()
-					.replace(/^#/, "")
-			)
-			.filter(
-				(tag) =>
-					tag.length > 0
+		this.properties.tags =
+			this.tagManager.parseInput(
+				value
 			);
 	}
 
@@ -155,20 +174,10 @@ export class ClassifyModal extends Modal {
 			return;
 		}
 
-		const value =
-			this.tagInputEl.value;
-
-		const parts =
-			value.split(",");
-
-		const currentPart =
-			parts[parts.length - 1] ?? "";
-
 		const currentTag =
-			currentPart
-				.trim()
-				.replace(/^#/, "")
-				.toLowerCase();
+			this.tagManager.getCurrentInputTag(
+				this.tagInputEl.value
+			);
 
 		this.tagSuggestionEl.empty();
 
@@ -178,23 +187,20 @@ export class ClassifyModal extends Modal {
 		}
 
 		const suggestions =
-			this.existingTags
-				.filter((tag) =>
-					tag
-						.toLowerCase()
-						.includes(currentTag)
-				)
-				.filter((tag) =>
-					!this.properties.tags.includes(tag)
-				)
-				.slice(0, 10);
+			this.tagManager.getAutocompleteTags(
+				currentTag,
+				this.properties.tags,
+				10
+			);
 
 		if (suggestions.length === 0) {
 			this.hideTagSuggestions();
 			return;
 		}
 
-		this.tagSuggestionEl.removeClass("image-curator-hidden");
+		this.tagSuggestionEl.removeClass(
+			"image-curator-hidden"
+		);
 
 		for (const tag of suggestions) {
 			const suggestion =
@@ -208,7 +214,10 @@ export class ClassifyModal extends Modal {
 				"mousedown",
 				(event) => {
 					event.preventDefault();
-					this.selectTagSuggestion(tag);
+
+					this.selectTagSuggestion(
+						tag
+					);
 				}
 			);
 		}
@@ -222,16 +231,10 @@ export class ClassifyModal extends Modal {
 			return;
 		}
 
-		const parts =
-			this.tagInputEl.value.split(",");
-
-		parts[parts.length - 1] =
-			` ${tag}`;
-
 		this.tagInputEl.value =
-			parts.join(",").replace(
-				/^ /,
-				""
+			this.tagManager.replaceCurrentInputTag(
+				this.tagInputEl.value,
+				tag
 			);
 
 		this.updateTagsFromInput(
@@ -250,7 +253,9 @@ export class ClassifyModal extends Modal {
 			return;
 		}
 
-		this.tagSuggestionEl.addClass("image-curator-hidden");
+		this.tagSuggestionEl.addClass(
+			"image-curator-hidden"
+		);
 	}
 
 
@@ -258,75 +263,103 @@ export class ClassifyModal extends Modal {
 	// Tag Checkboxes
 	// ========================================================
 
-    private updateTagCheckboxes() {
-        if (!this.tagCheckboxEl) {
-            return;
-        }
+	private updateTagCheckboxes() {
+		if (!this.tagCheckboxEl) {
+			return;
+		}
 
-        this.tagCheckboxEl.empty();
+		this.tagCheckboxEl.empty();
 
-        if (this.existingTags.length === 0) {
-            return;
-        }
+		const existingTags =
+			this.tagManager.getVisibleTags();
 
-        const title = this.tagCheckboxEl.createEl("div", {
-            text: "Existing Tags",
-        });
+		if (existingTags.length === 0) {
+			return;
+		}
 
-        title.addClass(
-            "image-curator-tag-title"
-        );
+		const title =
+			this.tagCheckboxEl.createEl(
+				"div",
+				{
+					text: "Existing Tags",
+				}
+			);
 
-        for (const tag of this.existingTags) {
-            const row = this.tagCheckboxEl.createEl(
-                "label",
-                {
-                    cls: "image-curator-tag-checkbox",
-                }
-            );
+		title.addClass(
+			"image-curator-tag-title"
+		);
 
-            const checkbox = row.createEl(
-                "input"
-            );
+		for (const tag of existingTags) {
+			const row =
+				this.tagCheckboxEl.createEl(
+					"label",
+					{
+						cls:
+							"image-curator-tag-checkbox",
+					}
+				);
 
-            checkbox.type = "checkbox";
-            checkbox.checked =
-                this.properties.tags.includes(tag);
+			const checkbox =
+				row.createEl("input");
 
-            const text = row.createEl("span", {
-                text: tag,
-            });
+			checkbox.type =
+				"checkbox";
 
-            checkbox.addEventListener(
-                "change",
-                () => {
-                    this.toggleTag(
-                        tag,
-                        checkbox.checked
-                    );
-                }
-            );
-        }
-    }
+			checkbox.checked =
+				this.tagManager.hasExactTag(
+					this.properties.tags,
+					tag
+				);
+
+			const text =
+				row.createEl(
+					"span",
+					{
+						text: tag,
+					}
+				);
+
+			checkbox.addEventListener(
+				"change",
+				() => {
+					this.toggleTag(
+						tag,
+						checkbox.checked
+					);
+				}
+			);
+		}
+	}
 
 
 	private toggleTag(
 		tag: string,
 		checked: boolean
 	) {
+		const normalizedTag =
+			this.tagManager.normalize(
+				tag
+			);
+
 		if (checked) {
 			if (
-				!this.properties.tags.includes(
-					tag
+				!this.tagManager.hasExactTag(
+					this.properties.tags,
+					normalizedTag
 				)
 			) {
-				this.properties.tags.push(tag);
+				this.properties.tags.push(
+					normalizedTag
+				);
 			}
 		} else {
 			this.properties.tags =
 				this.properties.tags.filter(
 					(value) =>
-						value !== tag
+						!this.tagManager.isExactMatch(
+							value,
+							normalizedTag
+						)
 				);
 		}
 
@@ -340,78 +373,11 @@ export class ClassifyModal extends Modal {
 		}
 
 		this.tagInputEl.value =
-			this.properties.tags.join(", ");
+			this.tagManager.toInputValue(
+				this.properties.tags
+			);
 
 		this.updateTagSuggestions();
-	}
-
-
-	// ========================================================
-	// Existing Tags
-	// ========================================================
-
-	private getExistingTags(): string[] {
-		const tags = new Set<string>();
-
-		const files =
-			this.app.vault.getMarkdownFiles();
-
-		for (const file of files) {
-			const cache =
-				this.app.metadataCache
-					.getFileCache(file);
-
-			const frontmatter =
-				cache?.frontmatter;
-
-			if (!frontmatter) {
-				continue;
-			}
-
-			const value =
-				frontmatter.tags;
-
-			if (Array.isArray(value)) {
-				for (const tag of value) {
-					this.addTag(tags, tag);
-				}
-			} else if (
-				typeof value === "string"
-			) {
-				for (
-					const tag
-					of value.split(",")
-				) {
-					this.addTag(tags, tag);
-				}
-			}
-		}
-
-		return Array.from(tags).sort(
-			(a, b) =>
-				a.localeCompare(b)
-		);
-	}
-
-
-	private addTag(
-		tags: Set<string>,
-		value: unknown
-	) {
-		if (
-			typeof value !== "string"
-		) {
-			return;
-		}
-
-		const tag =
-			value
-				.replace(/^#/, "")
-				.trim();
-
-		if (tag.length > 0) {
-			tags.add(tag);
-		}
 	}
 
 
@@ -638,5 +604,4 @@ description: ${this.properties.description}
 	onClose() {
 		this.contentEl.empty();
 	}
-
 }
